@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen`}
       >
         {children}
         <footer className="bottom-2 text-center w-full fixed"><small>Copyright © Elizabeth Tennant 2025</small></footer>

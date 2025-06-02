@@ -5,6 +5,32 @@
   --foreground: #171717;
 }
 
+.text-pulse-green {
+  animation: color-change 4s infinite; 
+  animation-timing-function: ease;
+}
+
+@keyframes color-change {
+
+  0% { color: lime };
+  50% { color: mediumseagreen };
+  100% { color: lime };
+  /* 0% { background-color: oklch(0.723 0.219 149.579) };
+  50% { background-color: oklch(0.696 0.17 162.48) };
+  100% { background-color: oklch(0.723 0.219 149.579) }; */
+}
+
+.border-pulse {
+  animation: border-color-change 4s infinite; 
+  animation-timing-function: ease;
+}
+
+@keyframes border-color-change {
+  0% { border-color: white; }
+  50% { border-color: palegreen; }
+  100% { border-color: white; }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
