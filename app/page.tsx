@@ -9,7 +9,7 @@ export default function Home() {
     // at the end of the game, all the words are displayed, scrollable 
     // current score is displayed at bottom  
     <div className="h-13/14 flex flex-col">
-      <h1 className="m-4 text-4xl text-center">Word Chains</h1>
+      <h1 className="m-4 text-4xl text-center text-rose-500 font-[Playwrite_US_Trad] font-bold">Word Chains</h1>
       <GameView></GameView>
     </div>
   );

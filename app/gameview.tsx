@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, SetStateAction } from "react";
+import { useState, SetStateAction, useEffect } from "react";
 import LetterNode from "./letter-node";
 import LetterInput from "./letter-input";
 
@@ -40,6 +40,10 @@ export default function GameView({}) {
   const [currentWord, setCurrentWord] : [string, React.Dispatch<SetStateAction<string>>] = useState("");
   const [prevWords, setPrevWords] : [string[], React.Dispatch<SetStateAction<string[]>>] = useState(new Array());
 
+  useEffect(() => {
+    setHighScore(Number(localStorage.getItem('highscore')) ?? 0);
+  }, []);
+
   function startGame() {
     setIsRunning(true);
     setScore(0);
@@ -50,6 +54,7 @@ export default function GameView({}) {
   function endGame() {
     setIsRunning(false);
     if (score > highScore) {
+      localStorage.setItem('highscore', score.toString());
       setHighScore(score);
     }
     console.log(`Game Over. Your score is: ${score}`);
@@ -68,21 +73,29 @@ export default function GameView({}) {
 
   function handleLetterInput(value : string) {
     if (!value) return; 
+
+    if (value == 'BACKSPACE') {
+      if (currentWord.length > 1) {
+        setCurrentWord(currentWord.slice(0, currentWord.length - 1));
+      }
+      return; 
+    }
+
     setCurrentWord(currentWord + value);
   }
 
   function isValidWord(word: string) {
-    if (word.length < 3) {
-      return false; 
-    }
-
     // TODO: add dictionary check 
     return true; 
   }
 
   function handleWordInput() {
-    console.log(`You entered '${currentWord}'`);
     if (!currentWord) return; // ignore empty word inputs 
+
+    // don't end game for too-short words, just reject them and continue 
+    if (currentWord.length < 3) {
+      return; 
+    }
 
     if (isValidWord(currentWord)) {
       setPrevWords([...prevWords, currentWord]);
@@ -97,8 +110,8 @@ export default function GameView({}) {
     <main className="h-9/10 gap-8 text-center px-8">
       <div className="h-full">
         { isRunning ?
-          <div className="flex flex-col items-center h-full">
-            <div className="basis-2/5 content-center">
+          <div className="flex flex-col justify-between items-center h-full">
+            <div className="basis-4/5 content-center">
               {currentWord.split("").map((c, i) => 
                 <LetterNode key={'letter-' + i} value={c}></LetterNode>
               )}
@@ -110,16 +123,26 @@ export default function GameView({}) {
             <div className="content-center">
               <button onClick={endGame} className="border-2 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold hover:bg-cyan-200/20 transition duration-200">End Game</button>
             </div>
+            <div className="content-end text-yellow-200 font-bold"><p>{score} points</p></div>
           </div>
         : 
         <div className="flex flex-col items-center h-full">
-          <div className="content-center p-4 w-full basis-1/5 sm:w-1/2 lg:w-1/3 xl:w-1/4">
-            {score > 0 ? <p>Your score: {score}</p> : ""}
-            {score == highScore && score > 0 ? <p className="text-pulse-green">New Highscore!</p> : ""}
-          </div>
+          {score > 0 ? 
+            <div className="content-center p-4 w-full basis-1/5 sm:w-1/2 lg:w-1/3 xl:w-1/4">
+              <p className="font-bold text-yellow-200 italic">You scored {score} points!</p>
+              {score == highScore && score > 0 ? 
+                <p className="text-pulse-green font-bold italic">
+                  <span className="sparkle-in-out-animate">✨</span>
+                  New High Score!
+                  <span className="sparkle-out-in-animate">✨</span>
+                </p> 
+              : ""}
+            </div>
+          : ""
+          }
           {prevWords.length > 0 ? 
             <div className="border-2 shrink basis-3/5 overflow-y-scroll rounded-xl w-full sm:w-1/2 lg:w-1/3 xl:w-1/4">
-              <h2 className="sticky top-0 text-lg font-bold bg-black p-2">Words Used</h2>
+              <h2 className="sticky top-0 text-lg font-bold bg-background p-2">Words Used</h2>
               <div>
                 {prevWords.map((word, i) => 
                   <li key={"word-" + i} className="list-none p-1 hover:bg-white/10 transition duration-200 ease">{word}</li>
@@ -127,13 +150,15 @@ export default function GameView({}) {
               </div>              
             </div>
           : ""}
-          <div className="basis-1/5 content-center w-full sm:w-1/2 lg:w-1/3 xl:w-1/4">
+          <div className={(score > 0 ? "basis-1/5 " : "grow ") + "content-center w-full sm:w-1/2 lg:w-1/3 xl:w-1/4"}>
             <button className="border-2 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold border-pulse hover:bg-cyan-200/20 transition duration-200" onClick={startGame}>Start New Game</button>
           </div>
+          {score == 0 && highScore > 0 ? 
+            <p className="text-yellow-200 font-bold">Your high score is {highScore}</p>
+          : ""}
         </div>
         }
       </div>
-      <div className={"fixed bottom-12 w-full" + !isRunning ? " hidden" : ""}><p>Score: {score}</p></div>
     </main>
   )
 }

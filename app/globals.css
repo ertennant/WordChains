@@ -5,13 +5,34 @@
   --foreground: #171717;
 }
 
-.text-pulse-green {
-  animation: color-change 4s infinite; 
+.sparkle-in-out-animate {
+  animation: sparkle-in-out 2s infinite;
   animation-timing-function: ease;
 }
 
-@keyframes color-change {
+.sparkle-out-in-animate {
+  animation: sparkle-out-in 2s infinite;
+  animation-timing-function: ease;
+}
 
+@keyframes sparkle-in-out {
+  0% { opacity: 0;}
+  50% { opacity: 100;}
+  100% { opacity: 0;}
+}
+
+@keyframes sparkle-out-in {
+  0% { opacity: 100;}
+  50% { opacity: 0;}
+  100% { opacity: 100;}
+}
+
+.text-pulse-green {
+  animation: color-change-green 4s infinite; 
+  animation-timing-function: ease;
+}
+
+@keyframes color-change-green {
   0% { color: lime };
   50% { color: mediumseagreen };
   100% { color: lime };
@@ -20,15 +41,26 @@
   100% { background-color: oklch(0.723 0.219 149.579) }; */
 }
 
+.text-pulse-rose {
+  animation: color-change-rose 5s infinite; 
+  animation-timing-function: ease;
+}
+
+@keyframes color-change-rose {
+  0% { color: var(--foreground) };
+  50% { color: oklch(0.645 0.246 16.439) };
+  100% { color: var(--foreground) };
+}
+
 .border-pulse {
-  animation: border-color-change 4s infinite; 
+  animation: border-color-change 5s infinite; 
   animation-timing-function: ease;
 }
 
 @keyframes border-color-change {
-  0% { border-color: white; }
-  50% { border-color: palegreen; }
-  100% { border-color: white; }
+  0% { border-color: var(--foreground); }
+  50% { border-color: oklch(0.645 0.246 16.439); }
+  100% { border-color: var(--foreground); }
 }
 
 @theme inline {

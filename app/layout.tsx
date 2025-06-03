@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Cookie, Playwrite_US_Trad } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+});
+
+const playwrite_us_trad = Playwrite_US_Trad({
+  variable: "--font-playwrite-us-trad",
 });
 
 const geistMono = Geist_Mono({
@@ -25,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} ${playwrite_us_trad.variable} antialiased h-screen`}
       >
         {children}
         <footer className="bottom-2 text-center w-full fixed"><small>Copyright © Elizabeth Tennant 2025</small></footer>
