@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, SetStateAction, useEffect } from "react";
+import React, { useRef, useState, SetStateAction, useEffect } from "react";
 import LetterNode from "./letter-node";
 import LetterInput from "./letter-input";
 
@@ -33,31 +33,72 @@ const letterValues : Map<string, number> = new Map([
   ['z', 10]
   ]);
 
+const TIME_PER_WORD = 30000; // in milliseconds 
+
 export default function GameView({}) {
+  const [gameType, setGameType] : [string, React.Dispatch<SetStateAction<string>>] = useState("");
   const [isRunning, setIsRunning] : [boolean, React.Dispatch<SetStateAction<boolean>>] = useState(false);
   const [score, setScore] : [number, React.Dispatch<SetStateAction<number>>] = useState(0);
-  const [highScore, setHighScore] : [number, React.Dispatch<SetStateAction<number>>] = useState(0);
+  const [highScore, setHighScore] : [{timed: number, untimed: number}, React.Dispatch<SetStateAction<{timed: number, untimed: number}>>] = useState({timed: 0, untimed: 0});
   const [currentWord, setCurrentWord] : [string, React.Dispatch<SetStateAction<string>>] = useState("");
   const [prevWords, setPrevWords] : [string[], React.Dispatch<SetStateAction<string[]>>] = useState(new Array());
+  const [showGameModePicker, setShowGameModePicker] : [boolean, React.Dispatch<SetStateAction<boolean>>] = useState(false);
+  const startTime = useRef(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const [elapsedTime, setElapsedTime] : [number, React.Dispatch<SetStateAction<number>>] = useState(0);
+  const [totalDuration, setTotalDuration] : [number, React.Dispatch<SetStateAction<number>>] = useState(0);
 
   useEffect(() => {
-    setHighScore(Number(localStorage.getItem('highscore')) ?? 0);
+    // when page loads on client, retrieve any saved highscore data they have 
+    setHighScore({
+      timed: Number(localStorage.getItem('highscore-timed')) ?? 0, 
+      untimed: Number(localStorage.getItem('highscore')) ?? 0, 
+    })
   }, []);
 
-  function startGame() {
+  useEffect(() => {
+    // update timer every 100 ms, end game if exceeds time 
+    if (gameType == "timed") {
+      if (isRunning) {
+        intervalRef.current = setInterval(() => {
+          setElapsedTime(Date.now() - startTime.current);
+        }, 100)
+      }
+    }
+
+    return () => {
+      clearInterval(intervalRef.current); // stops when finished 
+    }
+  }, [isRunning])
+
+  useEffect(() => {
+    if (elapsedTime > TIME_PER_WORD) {
+      endGame(); 
+    }
+  }, [elapsedTime])
+
+  function startGame(gameType: string) {
     setIsRunning(true);
     setScore(0);
     setCurrentWord("");
     setPrevWords([]);
+    setGameType(gameType);
+    if (gameType == "timed") {
+      startTime.current = Date.now(); 
+      setElapsedTime(0);
+      setTotalDuration(0);
+    }
   }
 
   function endGame() {
     setIsRunning(false);
-    if (score > highScore) {
+    if (gameType == 'untimed' && score > highScore.untimed) {
       localStorage.setItem('highscore', score.toString());
-      setHighScore(score);
+      setHighScore({timed: highScore.timed, untimed: score});
+    } else if (gameType == 'timed' && score > highScore.timed) {
+      localStorage.setItem('highscore-timed', score.toString());
+      setHighScore({timed: score, untimed: highScore.untimed});
     }
-    console.log(`Game Over. Your score is: ${score}`);
   }
 
   function updateScore(word: string) {
@@ -101,17 +142,26 @@ export default function GameView({}) {
       setPrevWords([...prevWords, currentWord]);
       updateScore(currentWord);
       setCurrentWord(currentWord.charAt(currentWord.length - 1));
+      if (gameType == "timed") {
+        setTotalDuration(totalDuration + Math.floor((elapsedTime / 1000) % 60));
+        setElapsedTime(0);
+        startTime.current = Date.now();  
+      }
     } else {
       endGame();
     }
   }
 
   return (
-    <main className="h-9/10 gap-8 text-center px-8">
+    <main className="h-9/10 gap-8 text-center px-8" onClick={e => setShowGameModePicker(false)}>
       <div className="h-full">
         { isRunning ?
           <div className="flex flex-col justify-between items-center h-full">
-            <div className="basis-4/5 content-center">
+            {gameType == "timed" ?
+              <div className={"font-bold italic text-3xl basis-1/5 content-end"}><p>{Math.floor(((TIME_PER_WORD - elapsedTime) / 1000) % 60)}</p></div>
+              : ""
+            }
+            <div className={"content-center" + (gameType == "untimed" ? " basis-4/5" : " basis-4/5")}>
               {currentWord.split("").map((c, i) => 
                 <LetterNode key={'letter-' + i} value={c}></LetterNode>
               )}
@@ -130,7 +180,10 @@ export default function GameView({}) {
           {score > 0 ? 
             <div className="content-center p-4 w-full basis-1/5 sm:w-1/2 lg:w-1/3 xl:w-1/4">
               <p className="font-bold text-yellow-200 italic">You scored {score} points!</p>
-              {score == highScore && score > 0 ? 
+              {gameType == "timed" ? 
+              <p className="font-bold text-yellow-200 italic">You entered {prevWords.length} word{prevWords.length > 1 || prevWords.length == 0 ? "s" : ""} in {totalDuration + (Math.floor((elapsedTime / 1000) % 60))} seconds!</p>
+              : ""}
+              {score > 0 && ((gameType == 'timed' && score == highScore.timed) || (gameType == 'untimed' && score == highScore.untimed)) ? 
                 <p className="text-pulse-green font-bold italic">
                   <span className="sparkle-in-out-animate">✨</span>
                   New High Score!
@@ -151,11 +204,13 @@ export default function GameView({}) {
             </div>
           : ""}
           <div className={(score > 0 ? "basis-1/5 " : "grow ") + "content-center w-full sm:w-1/2 lg:w-1/3 xl:w-1/4"}>
-            <button className="border-2 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold border-pulse hover:bg-cyan-200/20 transition duration-200" onClick={startGame}>Start New Game</button>
+            <div className={showGameModePicker ? "block" : "hidden"}>
+              <button className="mx-1 border-2 border-green-500 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold hover:bg-cyan-200/20" onClick={e => startGame("untimed")}>Normal Mode</button>
+              <button className="mx-1 border-2 border-yellow-500 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold hover:bg-cyan-200/20" onClick={e => startGame("timed")}>Timed Mode</button>
+            </div>
+            <button className={"border-2 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold border-pulse hover:bg-cyan-200/20 transition duration-200" + (showGameModePicker ? " hidden" : "")} onClick={e => {setShowGameModePicker(true); e.stopPropagation();}}>Start New Game</button>
           </div>
-          {score == 0 && highScore > 0 ? 
-            <p className="text-yellow-200 font-bold">Your high score is {highScore}</p>
-          : ""}
+          <p className="text-yellow-200 font-bold">Your high score is {gameType == "timed" ? highScore.timed : highScore.untimed}</p>
         </div>
         }
       </div>
