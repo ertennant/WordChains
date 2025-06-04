@@ -4,6 +4,11 @@ import React, { useRef, useState, SetStateAction, useEffect } from "react";
 import LetterNode from "./letter-node";
 import LetterInput from "./letter-input";
 
+var Typo = require("typo-js");
+var dictionary : any = null; 
+// var dictionary = new Typo("en_US", false, false, { dictionaryPath: "en_US" })
+// var dictionary = new Typo("dictionaries/en_US");
+
 const letterValues : Map<string, number> = new Map([
   ['e', 1],
   ['t', 2],
@@ -47,6 +52,7 @@ export default function GameView({}) {
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const [elapsedTime, setElapsedTime] : [number, React.Dispatch<SetStateAction<number>>] = useState(0);
   const [totalDuration, setTotalDuration] : [number, React.Dispatch<SetStateAction<number>>] = useState(0);
+  const [dictionary, setDictionary] : [typeof Typo | null, React.Dispatch<SetStateAction<typeof Typo>>] = useState(null);
 
   useEffect(() => {
     // when page loads on client, retrieve any saved highscore data they have 
@@ -54,6 +60,23 @@ export default function GameView({}) {
       timed: Number(localStorage.getItem('highscore-timed')) ?? 0, 
       untimed: Number(localStorage.getItem('highscore')) ?? 0, 
     })
+
+    async function loadDictionary() {
+      try {
+        const affData = await fetch("dictionaries/en_US/en_US.aff").then((res) =>
+          res.text()
+        );
+        const dicData = await fetch("dictionaries/en_US/en_US.dic").then((res) =>
+          res.text()
+        );
+
+        setDictionary(new Typo("en_US", affData, dicData));
+        
+      } catch (error) {
+        console.error("Error loading the dictionary:", error);
+      }
+    }
+    loadDictionary(); 
   }, []);
 
   useEffect(() => {
@@ -126,8 +149,13 @@ export default function GameView({}) {
   }
 
   function isValidWord(word: string) {
-    // TODO: add dictionary check 
-    return true; 
+    if (word.length > 45) return false; 
+    if (!word.match(/^[A-Za-z]+$/)) return false; // reject input containing non-letter characters  
+    if (!dictionary) {
+      console.error("Error: cannot check word validity because dictionary is null.");
+      return true; 
+    }
+    return dictionary.check(word) || dictionary.check(word.charAt(0).toUpperCase() + word.slice(1));
   }
 
   function handleWordInput() {
@@ -138,12 +166,14 @@ export default function GameView({}) {
       return; 
     }
 
+    let duration = Math.floor((elapsedTime / 1000) % 60); // 
+
     if (isValidWord(currentWord)) {
       setPrevWords([...prevWords, currentWord]);
       updateScore(currentWord);
       setCurrentWord(currentWord.charAt(currentWord.length - 1));
       if (gameType == "timed") {
-        setTotalDuration(totalDuration + Math.floor((elapsedTime / 1000) % 60));
+        setTotalDuration(totalDuration + duration);
         setElapsedTime(0);
         startTime.current = Date.now();  
       }
