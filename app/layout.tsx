@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cookie, Playwrite_US_Trad } from "next/font/google";
 import "./globals.css";
+import Image from "next/image";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,19 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${playwrite_us_trad.variable} antialiased h-screen`}
       >
         {children}
-        <footer className="bottom-2 text-center w-full fixed"><small>Copyright © Elizabeth Tennant 2025</small></footer>
+        <footer className="bottom-0 text-center w-full fixed flex flex-row justify-between items-center">
+          <div className="w-[24px]"></div>
+          <small>Copyright © Elizabeth Tennant 2025</small>
+          <a href="https://github.com/ertennant" className="p-2">
+            <Image
+              src="./github-mark.svg"
+              alt="Link to GitHub"
+              height={24}
+              width={24}
+            >
+            </Image>
+          </a>
+        </footer>
       </body>
     </html>
   );
