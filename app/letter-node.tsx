@@ -1,5 +1,3 @@
-import { useState, SetStateAction } from "react"
-
 type AppProps = {
   value: string 
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Cookie, Playwrite_US_Trad } from "next/font/google";
+import { Geist, Geist_Mono, Playwrite_US_Trad } from "next/font/google";
 import "./globals.css";
 import Image from "next/image";
 

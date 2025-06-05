@@ -4,10 +4,8 @@ import React, { useRef, useState, SetStateAction, useEffect } from "react";
 import LetterNode from "./letter-node";
 import LetterInput from "./letter-input";
 
-var Typo = require("typo-js");
-var dictionary : any = null; 
-// var dictionary = new Typo("en_US", false, false, { dictionaryPath: "en_US" })
-// var dictionary = new Typo("dictionaries/en_US");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const Typo = require("typo-js");
 
 const letterValues : Map<string, number> = new Map([
   ['e', 1],
@@ -46,7 +44,7 @@ export default function GameView({}) {
   const [score, setScore] : [number, React.Dispatch<SetStateAction<number>>] = useState(0);
   const [highScore, setHighScore] : [{timed: number, untimed: number}, React.Dispatch<SetStateAction<{timed: number, untimed: number}>>] = useState({timed: 0, untimed: 0});
   const [currentWord, setCurrentWord] : [string, React.Dispatch<SetStateAction<string>>] = useState("");
-  const [prevWords, setPrevWords] : [string[], React.Dispatch<SetStateAction<string[]>>] = useState(new Array());
+  const [prevWords, setPrevWords] : [string[], React.Dispatch<SetStateAction<string[]>>] = useState(new Array<string>());
   const [showGameModePicker, setShowGameModePicker] : [boolean, React.Dispatch<SetStateAction<boolean>>] = useState(false);
   const startTime = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
@@ -92,13 +90,17 @@ export default function GameView({}) {
     return () => {
       clearInterval(intervalRef.current); // stops when finished 
     }
-  }, [isRunning])
+  }, [isRunning, gameType])
 
   useEffect(() => {
     if (elapsedTime > TIME_PER_WORD) {
-      endGame(); 
+      setIsRunning(false);
+      if (score > highScore.timed) {
+        localStorage.setItem('highscore-timed', score.toString());
+        setHighScore({timed: score, untimed: highScore.untimed});
+      }
     }
-  }, [elapsedTime])
+  }, [elapsedTime, highScore.timed, highScore.untimed, score])
 
   function startGame(gameType: string) {
     setIsRunning(true);
@@ -166,7 +168,7 @@ export default function GameView({}) {
       return; 
     }
 
-    let duration = Math.floor((elapsedTime / 1000) % 60); // 
+    const duration = Math.floor((elapsedTime / 1000) % 60); 
 
     if (isValidWord(currentWord)) {
       setPrevWords([...prevWords, currentWord]);
@@ -183,7 +185,7 @@ export default function GameView({}) {
   }
 
   return (
-    <main className="h-9/10 gap-8 text-center px-8" onClick={e => setShowGameModePicker(false)}>
+    <main className="h-9/10 gap-8 text-center px-8" onClick={() => setShowGameModePicker(false)}>
       <div className="h-full">
         { isRunning ?
           <div className="flex flex-col justify-between items-center h-full">
@@ -235,8 +237,8 @@ export default function GameView({}) {
           : ""}
           <div className={(score > 0 ? "basis-1/5 " : "grow ") + "content-center w-full sm:w-1/2 lg:w-1/3 xl:w-1/4"}>
             <div className={showGameModePicker ? "block" : "hidden"}>
-              <button className="mx-1 border-2 border-green-500 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold hover:bg-cyan-200/20" onClick={e => startGame("untimed")}>Normal Mode</button>
-              <button className="mx-1 border-2 border-yellow-500 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold hover:bg-cyan-200/20" onClick={e => startGame("timed")}>Timed Mode</button>
+              <button className="mx-1 border-2 border-green-500 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold hover:bg-cyan-200/20" onClick={() => startGame("untimed")}>Normal Mode</button>
+              <button className="mx-1 border-2 border-yellow-500 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold hover:bg-cyan-200/20" onClick={() => startGame("timed")}>Timed Mode</button>
             </div>
             <button className={"border-2 rounded-xl py-2 px-4 cursor-pointer text-lg font-bold border-pulse hover:bg-cyan-200/20 transition duration-200" + (showGameModePicker ? " hidden" : "")} onClick={e => {setShowGameModePicker(true); e.stopPropagation();}}>Start New Game</button>
           </div>
